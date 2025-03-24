@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
 import os
+import uuid
 
 class SistemaInventario:
     def __init__(self, archivo="inventario.xlsx"):
@@ -25,10 +26,10 @@ class SistemaInventario:
         cantidad = int(input("Ingrese la cantidad inicial: "))
         precio = float(input("Ingrese el precio unitario: "))
         fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        nuevo_id = self.sheet.max_row
+        nuevo_id = str(uuid.uuid4())  # Generar un ID único con uuid
         self.sheet.append([nuevo_id, producto, cantidad, precio, fecha])
         self.workbook.save(self.archivo)
-        print(f"Producto {producto} agregado correctamente.")
+        print(f"Producto {producto} agregado correctamente con ID: {nuevo_id}.")
 
     def actualizar_existencias(self):
         producto = input("Ingrese el nombre del producto: ").strip()
@@ -70,10 +71,22 @@ class SistemaInventario:
         if df.empty:
             print("No hay datos en el inventario.")
             return
-        df.plot(x="Producto", y="Cantidad", kind="bar", title="Stock de Productos", figsize=(10, 5))
+   
+        df["Valor Total"] = df["Cantidad"] * df["Precio Unitario"]
+        df.plot(x="Producto", y="Valor Total", kind="bar", title="Valor Total de Productos", figsize=(10, 5))
         plt.xticks(rotation=45)
         plt.show()
 
+    def eliminar_producto(self):
+        producto = input("Ingrese el nombre del producto a eliminar: ").strip()
+        for row in range(2, self.sheet.max_row + 1):
+            if self.sheet.cell(row=row, column=2).value == producto:
+                self.sheet.delete_rows(row)
+                self.workbook.save(self.archivo)
+                print(f"Producto {producto} eliminado correctamente.")
+                return
+        print("Producto no encontrado.")        
+              
 
 def menu_principal():
     sistema = SistemaInventario()
@@ -84,7 +97,8 @@ def menu_principal():
         print("3. Registrar venta")
         print("4. Generar reporte")
         print("5. Visualizar estadísticas")
-        print("6. Salir")
+        print("6. Eliminar producto")  
+        print("7. Salir")
         opcion = input("Seleccione una opción: ")
         if opcion == "1":
             sistema.agregar_producto()
@@ -97,6 +111,8 @@ def menu_principal():
         elif opcion == "5":
             sistema.visualizar_estadisticas()
         elif opcion == "6":
+            sistema.eliminar_producto() 
+        elif opcion == "7":
             print("¡Hasta luego!")
             break
         else:
